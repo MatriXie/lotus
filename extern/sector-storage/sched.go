@@ -484,6 +484,7 @@ func (sh *scheduler) trySched() {
 
 	log.Debugf("SCHED windows: %+v", windows)
 	log.Debugf("SCHED Acceptable win: %+v", acceptableWindows)
+	log.Debugf("LONGMEN SCHED: task assign record: %v", taskAssignRecord)
 
 	// Step 2
 	scheduled := 0
@@ -508,7 +509,6 @@ func (sh *scheduler) trySched() {
 				}
 			}
 			log.Debugf("LONGMEN SCHED: %d %v try to assigned to %v, isLocal: %v", task.sector.ID.Number, task.taskType, sh.workers[wid].info.Hostname, isLocal)
-			log.Debugf("LONGMEN SCHED: task assign record: %v", taskAssignRecord)
 
 			// TODO: allow bigger windows
 			if !isLocal || !windows[wnd].allocated.canHandleRequest(needRes, wid, "schedAssign", wr) {
