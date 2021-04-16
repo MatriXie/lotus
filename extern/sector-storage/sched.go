@@ -342,7 +342,7 @@ func (sh *scheduler) diag() SchedDiagInfo {
 }
 
 // Added by long 20210406
-func getP1Worker(wh *workerHandle, sh *scheduler) *workerHandle {
+func (sh *scheduler)getSameHostP1Worker(wh *workerHandle) *workerHandle {
 	for _, workerHandle := range sh.workers {
 		if workerHandle.info.Hostname == wh.info.Hostname && workerHandle != wh {
 			return workerHandle
@@ -460,8 +460,8 @@ func (sh *scheduler) trySched() {
 
 				// Added by long 20210406
 				if task.taskType == sealtasks.TTAddPiece {
-					wi = getP1Worker(wi, sh)
-					wj = getP1Worker(wj, sh)
+					wi = sh.getSameHostP1Worker(wi)
+					wj = sh.getSameHostP1Worker(wj)
 					if wi == nil {
 						return false
 					} else if wj == nil {
