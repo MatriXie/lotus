@@ -3,6 +3,7 @@ package sectorstorage
 import (
 	"sync"
 
+	sealtasks "github.com/filecoin-project/lotus/extern/sector-storage/sealtasks"
 	"github.com/filecoin-project/lotus/extern/sector-storage/storiface"
 )
 
@@ -26,19 +27,47 @@ func (a *activeResources) withResources(id WorkerID, wr storiface.WorkerResource
 	return err
 }
 
+// Modified by long 20210318
 func (a *activeResources) add(wr storiface.WorkerResources, r Resources) {
 	if r.CanGPU {
+		a.gpuUsedNum++
 		a.gpuUsed = true
 	}
+
+	switch r.taskType {
+	case sealtasks.TTAddPiece:
+		a.apParallelNum++
+	case sealtasks.TTPreCommit1:
+		a.p1ParallelNum++
+		a.p1ParallelMax = LO_P1_PARALLEL_NUM
+	case sealtasks.TTPreCommit2:
+		a.p2ParallelNum++
+	}
+
 	a.cpuUse += r.Threads(wr.CPUs)
 	a.memUsedMin += r.MinMemory
 	a.memUsedMax += r.MaxMemory
 }
 
+// Modified by long 20210318
 func (a *activeResources) free(wr storiface.WorkerResources, r Resources) {
 	if r.CanGPU {
-		a.gpuUsed = false
+		a.gpuUsedNum--
+		if a.gpuUsedNum == 0 {
+			a.gpuUsed = false
+		}
 	}
+
+	switch r.taskType {
+	case sealtasks.TTAddPiece:
+		a.apParallelNum--
+	case sealtasks.TTPreCommit1:
+		a.p1ParallelNum--
+		a.p1ParallelMax = LO_P1_PARALLEL_NUM
+	case sealtasks.TTPreCommit2:
+		a.p2ParallelNum--
+	}
+
 	a.cpuUse -= r.Threads(wr.CPUs)
 	a.memUsedMin -= r.MinMemory
 	a.memUsedMax -= r.MaxMemory
@@ -65,12 +94,36 @@ func (a *activeResources) canHandleRequest(needRes Resources, wid WorkerID, call
 		return false
 	}
 
-	if len(res.GPUs) > 0 && needRes.CanGPU {
-		if a.gpuUsed {
+	if len(res.GPUs) > 0 && needRes.CanGPU { // Meanless
+		// Modified by long 20210406
+		// if a.gpuUsed {
+		if a.gpuUsedNum >= LO_C2_PARALLEL_NUM {
 			log.Debugf("sched: not scheduling on worker %s for %s; GPU in use", wid, caller)
 			return false
 		}
 	}
+
+	// Added by long 20210405 -------------------------------------------------
+	switch needRes.taskType {
+	case sealtasks.TTAddPiece:
+		if a.apParallelNum > 0 || a.p2ParallelNum > 0 { // AP and P2 are mutually exclusive, and only one AP is allowed to be runnig in parallel.
+			log.Debugf("sched: not scheduling on worker %s for %s; AP is running...", wid, caller)
+			return false
+		}
+
+	case sealtasks.TTPreCommit1:
+		if a.p1ParallelNum >= LO_P1_PARALLEL_NUM {
+			log.Debugf("sched: not scheduling on worker %s for %s; P1ParallelNum get max", wid, caller)
+			return false
+		}
+
+	case sealtasks.TTPreCommit2:
+		if a.apParallelNum > 0 {
+			log.Debugf("sched: not scheduling on worker %s for %s; AP is running...", wid, caller)
+			return false
+		}
+	}
+	// ------------------------------------------------------------------------
 
 	return true
 }

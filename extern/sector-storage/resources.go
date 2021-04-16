@@ -1,6 +1,9 @@
 package sectorstorage
 
 import (
+	"os"
+	"strconv"
+
 	"github.com/filecoin-project/go-state-types/abi"
 
 	"github.com/filecoin-project/lotus/extern/sector-storage/sealtasks"
@@ -14,6 +17,8 @@ type Resources struct {
 	CanGPU         bool
 
 	BaseMinMemory uint64 // What Must be in RAM for decent perf (shared between threads)
+
+	taskType sealtasks.TaskType // Added by long 20210331
 }
 
 /*
@@ -31,10 +36,41 @@ type Resources struct {
 var ParallelNum uint64 = 92
 var ParallelDenom uint64 = 100
 
-// TODO: Take NUMA into account
+// Added by long 20210404 -------------------------------------------------------------
+var LO_P1_PARALLEL_NUM uint64 = 8
+var LO_P2_PARALLEL_NUM uint64 = 1
+var LO_C2_PARALLEL_NUM uint64 = 2
+
+func init() {
+	tmp, err := strconv.ParseUint(os.Getenv("LO_P1_PARALLEL_NUM"), 0, 64)
+	if err == nil {
+		LO_P1_PARALLEL_NUM = tmp
+	}
+
+	tmp, err = strconv.ParseUint(os.Getenv("LO_P2_PARALLEL_NUM"), 0, 64)
+	if err == nil {
+		LO_P2_PARALLEL_NUM = tmp
+	}
+
+	tmp, err = strconv.ParseUint(os.Getenv("LO_C2_PARALLEL_NUM"), 0, 64)
+	if err == nil {
+		LO_C2_PARALLEL_NUM = tmp
+	}
+}
+
 func (r Resources) Threads(wcpus uint64) uint64 {
 	if r.MaxParallelism == -1 {
-		n := (wcpus * ParallelNum) / ParallelDenom
+		pNum := ParallelNum
+
+		if r.taskType == sealtasks.TTPreCommit2 {
+			pNum /= LO_P2_PARALLEL_NUM
+		}
+
+		if r.taskType == sealtasks.TTCommit2 {
+			pNum /= LO_C2_PARALLEL_NUM
+		}
+
+		n := (wcpus * pNum) / ParallelDenom
 		if n == 0 {
 			return wcpus
 		}
@@ -43,6 +79,21 @@ func (r Resources) Threads(wcpus uint64) uint64 {
 
 	return uint64(r.MaxParallelism)
 }
+
+// ------------------------------------------------------------------------------------
+
+// TODO: Take NUMA into account
+// Deleted by long 20210331
+// func (r Resources) Threads(wcpus uint64) uint64 {
+// 	if r.MaxParallelism == -1 {
+// 		n := (wcpus * ParallelNum) / ParallelDenom
+// 		if n == 0 {
+// 			return wcpus
+// 		}
+// 		return n
+// 	}
+// 	return uint64(r.MaxParallelism)
+// }
 
 var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources{
 	sealtasks.TTAddPiece: {
@@ -61,6 +112,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			MaxParallelism: 1,
 
 			BaseMinMemory: 1 << 30,
+			taskType:      sealtasks.TTAddPiece, // Added by long 20210404
 		},
 		abi.RegisteredSealProof_StackedDrg512MiBV1: Resources{
 			MaxMemory: 1 << 30,
@@ -103,6 +155,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			MaxParallelism: 1,
 
 			BaseMinMemory: 10 << 20,
+			taskType:      sealtasks.TTPreCommit1, // Added by long 20210404
 		},
 		abi.RegisteredSealProof_StackedDrg512MiBV1: Resources{
 			MaxMemory: 1 << 30,
@@ -147,6 +200,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			CanGPU:         true,
 
 			BaseMinMemory: 1 << 30,
+			taskType:      sealtasks.TTPreCommit2, // Added by long 20210404
 		},
 		abi.RegisteredSealProof_StackedDrg512MiBV1: Resources{
 			MaxMemory: 3 << 29, // 1.5G
@@ -189,6 +243,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			MaxParallelism: 0,
 
 			BaseMinMemory: 1 << 30,
+			taskType:      sealtasks.TTCommit1, // Added by long 20210404
 		},
 		abi.RegisteredSealProof_StackedDrg512MiBV1: Resources{
 			MaxMemory: 1 << 30,
@@ -232,7 +287,8 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			MaxParallelism: -1,
 			CanGPU:         true,
 
-			BaseMinMemory: 32 << 30, // params
+			BaseMinMemory: 32 << 30,            // params
+			taskType:      sealtasks.TTCommit2, // Added by long 20210404
 		},
 		abi.RegisteredSealProof_StackedDrg512MiBV1: Resources{
 			MaxMemory: 3 << 29, // 1.5G
@@ -280,6 +336,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			CanGPU:         false,
 
 			BaseMinMemory: 0,
+			taskType:      sealtasks.TTFetch, // Added by long 20210404
 		},
 		abi.RegisteredSealProof_StackedDrg512MiBV1: Resources{
 			MaxMemory: 1 << 20,

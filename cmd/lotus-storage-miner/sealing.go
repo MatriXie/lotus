@@ -87,8 +87,21 @@ var sealingWorkersCmd = &cli.Command{
 			cpuBars := int(stat.CpuUse * barCols / stat.Info.Resources.CPUs)
 			cpuBar := strings.Repeat("|", cpuBars) + strings.Repeat(" ", int(barCols)-cpuBars)
 
-			fmt.Printf("\tCPU:  [%s] %d/%d core(s) in use\n",
-				color.GreenString(cpuBar), stat.CpuUse, stat.Info.Resources.CPUs)
+			// Added by long 20210318 -------------------------------------------------
+			if stat.P1ParallelMax > 0 {
+				pc1Bars := int(stat.P1ParallelNum * barCols / stat.P1ParallelMax)
+				pc1Bar := strings.Repeat("|", pc1Bars) + strings.Repeat(" ", int(barCols)-pc1Bars)
+				fmt.Printf("\tPC1:  [%s] %d/%d task(s)\n",
+					color.GreenString(pc1Bar), stat.P1ParallelNum, stat.P1ParallelMax)
+			}
+			// ------------------------------------------------------------------------
+
+			// Modified by long 20210404 ----------------------------------------------
+			if stat.P1ParallelMax == 0 {
+				fmt.Printf("\tCPU:  [%s] %d/%d core(s) in use\n",
+					color.GreenString(cpuBar), stat.CpuUse, stat.Info.Resources.CPUs)
+			}
+			// ------------------------------------------------------------------------
 
 			ramBarsRes := int(stat.Info.Resources.MemReserved * barCols / stat.Info.Resources.MemPhysical)
 			ramBarsUsed := int(stat.MemUsedMin * barCols / stat.Info.Resources.MemPhysical)
@@ -114,9 +127,13 @@ var sealingWorkersCmd = &cli.Command{
 				types.SizeStr(types.NewInt(stat.Info.Resources.MemReserved+stat.MemUsedMax)),
 				types.SizeStr(types.NewInt(vmem)))
 
-			for _, gpu := range stat.Info.Resources.GPUs {
-				fmt.Printf("\tGPU: %s\n", color.New(gpuCol).Sprintf("%s, %sused", gpu, gpuUse))
+			// Modified by long 20210404 ----------------------------------------------
+			if stat.P1ParallelMax == 0 {
+				for _, gpu := range stat.Info.Resources.GPUs {
+					fmt.Printf("\tGPU: %s\n", color.New(gpuCol).Sprintf("%s, %sused", gpu, gpuUse))
+				}
 			}
+			// ------------------------------------------------------------------------
 		}
 
 		return nil

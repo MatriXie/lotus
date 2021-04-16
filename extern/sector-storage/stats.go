@@ -23,6 +23,9 @@ func (m *Manager) WorkerStats() map[uuid.UUID]storiface.WorkerStats {
 			MemUsedMax: handle.active.memUsedMax,
 			GpuUsed:    handle.active.gpuUsed,
 			CpuUse:     handle.active.cpuUse,
+
+			P1ParallelNum: handle.active.p1ParallelNum, // Added by long 20210318
+			P1ParallelMax: handle.active.p1ParallelMax, // Added by long 20210404
 		}
 	}
 

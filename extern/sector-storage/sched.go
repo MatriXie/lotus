@@ -28,6 +28,10 @@ var (
 	SchedWindows = 2
 )
 
+// Added by long 20210406
+// 记录 AP 分配记录，KEY 为 sector，value 为 hostname
+var taskAssignRecord = map[uint64]string{}
+
 func getPriority(ctx context.Context) int {
 	sp := ctx.Value(SchedPriorityKey)
 	if p, ok := sp.(int); ok {
@@ -118,6 +122,15 @@ type activeResources struct {
 	cpuUse     uint64
 
 	cond *sync.Cond
+
+	// Added by long 20210404 -----------------------------
+	gpuUsedNum    uint64
+	apParallelNum uint64
+	p1ParallelNum uint64
+	p2ParallelNum uint64
+	p1ParallelMax uint64
+	// p1ShadowParallelNum uint64
+	// ----------------------------------------------------
 }
 
 type workerRequest struct {
@@ -328,6 +341,16 @@ func (sh *scheduler) diag() SchedDiagInfo {
 	return out
 }
 
+// Added by long 20210406
+func getP1Worker(wh *workerHandle, sh *scheduler) *workerHandle {
+	for _, workerHandle := range sh.workers {
+		if workerHandle.info.Hostname == wh.info.Hostname && workerHandle != wh {
+			return workerHandle
+		}
+	}
+	return nil
+}
+
 func (sh *scheduler) trySched() {
 	/*
 		This assigns tasks to workers based on:
@@ -435,6 +458,19 @@ func (sh *scheduler) trySched() {
 				rpcCtx, cancel := context.WithTimeout(task.ctx, SelectorTimeout)
 				defer cancel()
 
+				// Added by long 20210406
+				if task.taskType == sealtasks.TTAddPiece {
+					wi = getP1Worker(wi, sh)
+					wj = getP1Worker(wj, sh)
+					if wi == nil {
+						return false
+					} else if wj == nil {
+						return true
+					} else {
+						return wi.active.p1ParallelNum < wj.active.p1ParallelNum
+					}
+				}
+
 				r, err := task.sel.Cmp(rpcCtx, task.taskType, wi, wj)
 				if err != nil {
 					log.Errorf("selecting best worker: %s", err)
@@ -464,8 +500,18 @@ func (sh *scheduler) trySched() {
 
 			log.Debugf("SCHED try assign sqi:%d sector %d to window %d", sqi, task.sector.ID.Number, wnd)
 
+			// Added by long 20210406
+			isLocal := true
+			if task.taskType == sealtasks.TTPreCommit1 || task.taskType == sealtasks.TTPreCommit2 {
+				if record, ok := taskAssignRecord[uint64(task.sector.ID.Number)]; ok {
+					isLocal = record == sh.workers[wid].info.Hostname
+				}
+			}
+			log.Debugf("LONGMEN SCHED: %d %v try to assigned to %v, isLocal: %v", task.sector.ID.Number, task.taskType, sh.workers[wid].info.Hostname, isLocal)
+			log.Debugf("LONGMEN SCHED: task assign record: %v", taskAssignRecord)
+
 			// TODO: allow bigger windows
-			if !windows[wnd].allocated.canHandleRequest(needRes, wid, "schedAssign", wr) {
+			if !isLocal || !windows[wnd].allocated.canHandleRequest(needRes, wid, "schedAssign", wr) {
 				continue
 			}
 
@@ -478,6 +524,12 @@ func (sh *scheduler) trySched() {
 			//  without additional network roundtrips (O(n^2) could be avoided by turning acceptableWindows.[] into heaps))
 
 			selectedWindow = wnd
+
+			// Added by long 20210406
+			if task.taskType == sealtasks.TTAddPiece {
+				taskAssignRecord[uint64(task.sector.ID.Number)] = sh.workers[wid].info.Hostname
+			}
+
 			break
 		}
 
