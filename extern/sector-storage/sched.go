@@ -508,7 +508,7 @@ func (sh *scheduler) trySched() {
 					isLocal = record == sh.workers[wid].info.Hostname
 				}
 			}
-			log.Debugf("LONGMEN SCHED: %d %v try to assigned to %v, isLocal: %v", task.sector.ID.Number, task.taskType, sh.workers[wid].info.Hostname, isLocal)
+			// log.Debugf("LONGMEN SCHED: %d %v try to assigned to %v, isLocal: %v", task.sector.ID.Number, task.taskType, sh.workers[wid].info.Hostname, isLocal)
 
 			// TODO: allow bigger windows
 			if !isLocal || !windows[wnd].allocated.canHandleRequest(needRes, wid, "schedAssign", wr) {
