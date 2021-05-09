@@ -104,6 +104,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			MaxParallelism: 1,
 
 			BaseMinMemory: 1 << 30,
+			taskType:      sealtasks.TTAddPiece, // Added by long 20210509
 		},
 		abi.RegisteredSealProof_StackedDrg32GiBV1: Resources{
 			MaxMemory: 4 << 30,
@@ -147,6 +148,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			MaxParallelism: 1,
 
 			BaseMinMemory: 10 << 20,
+			taskType:      sealtasks.TTPreCommit1, // Added by long 20210509
 		},
 		abi.RegisteredSealProof_StackedDrg32GiBV1: Resources{
 			MaxMemory: 64 << 30,
@@ -191,6 +193,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			CanGPU:         true,
 
 			BaseMinMemory: 1 << 30,
+			taskType:      sealtasks.TTPreCommit2, // Added by long 20210509
 		},
 		abi.RegisteredSealProof_StackedDrg32GiBV1: Resources{
 			MaxMemory: 15 << 30,
@@ -235,6 +238,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			MaxParallelism: 0,
 
 			BaseMinMemory: 1 << 30,
+			taskType:      sealtasks.TTCommit1, // Added by long 20210509
 		},
 		abi.RegisteredSealProof_StackedDrg32GiBV1: Resources{
 			MaxMemory: 1 << 30,
@@ -278,7 +282,8 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			MaxParallelism: -1,
 			CanGPU:         true,
 
-			BaseMinMemory: 64 << 30, // params
+			BaseMinMemory: 64 << 30,            // params
+			taskType:      sealtasks.TTCommit2, // Added by long 20210509
 		},
 		abi.RegisteredSealProof_StackedDrg32GiBV1: Resources{
 			MaxMemory: 150 << 30, // TODO: ~30G of this should really be BaseMaxMemory
@@ -327,6 +332,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			CanGPU:         false,
 
 			BaseMinMemory: 0,
+			taskType:      sealtasks.TTFetch, // Added by long 20210509
 		},
 		abi.RegisteredSealProof_StackedDrg32GiBV1: Resources{
 			MaxMemory: 1 << 20,
