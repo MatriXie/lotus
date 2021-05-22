@@ -37,7 +37,7 @@ var ParallelNum uint64 = 92
 var ParallelDenom uint64 = 100
 
 // Added by long 20210404 -------------------------------------------------------------
-var LO_P1_PARALLEL_NUM uint64 = 8
+var LO_P1_PARALLEL_NUM uint64 = 6
 var LO_P2_PARALLEL_NUM uint64 = 1
 var LO_C2_PARALLEL_NUM uint64 = 2
 
@@ -145,7 +145,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			MaxMemory: 128 << 30,
 			MinMemory: 112 << 30,
 
-			MaxParallelism: 1,
+			MaxParallelism: 0, // 1, //Modified by long 20210510
 
 			BaseMinMemory: 10 << 20,
 			taskType:      sealtasks.TTPreCommit1, // Added by long 20210509
@@ -154,7 +154,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			MaxMemory: 64 << 30,
 			MinMemory: 56 << 30,
 
-			MaxParallelism: 1,
+			MaxParallelism: 0, // 1, //Modified by long 20210510
 
 			BaseMinMemory: 10 << 20,
 			taskType:      sealtasks.TTPreCommit1, // Added by long 20210404

@@ -128,8 +128,6 @@ type activeResources struct {
 	apParallelNum uint64
 	p1ParallelNum uint64
 	p2ParallelNum uint64
-	p1ParallelMax uint64
-	// p1ShadowParallelNum uint64
 	// ----------------------------------------------------
 }
 
@@ -341,16 +339,6 @@ func (sh *scheduler) diag() SchedDiagInfo {
 	return out
 }
 
-// Added by long 20210406
-func (sh *scheduler)getSameHostP1Worker(wh *workerHandle) *workerHandle {
-	for _, workerHandle := range sh.workers {
-		if workerHandle.info.Hostname == wh.info.Hostname && workerHandle != wh {
-			return workerHandle
-		}
-	}
-	return nil
-}
-
 func (sh *scheduler) trySched() {
 	/*
 		This assigns tasks to workers based on:
@@ -460,15 +448,7 @@ func (sh *scheduler) trySched() {
 
 				// Added by long 20210406
 				if task.taskType == sealtasks.TTAddPiece {
-					wi = sh.getSameHostP1Worker(wi)
-					wj = sh.getSameHostP1Worker(wj)
-					if wi == nil {
-						return false
-					} else if wj == nil {
-						return true
-					} else {
-						return wi.active.p1ParallelNum < wj.active.p1ParallelNum
-					}
+					return wi.active.p1ParallelNum < wj.active.p1ParallelNum
 				}
 
 				r, err := task.sel.Cmp(rpcCtx, task.taskType, wi, wj)

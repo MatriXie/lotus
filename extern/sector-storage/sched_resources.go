@@ -39,7 +39,6 @@ func (a *activeResources) add(wr storiface.WorkerResources, r Resources) {
 		a.apParallelNum++
 	case sealtasks.TTPreCommit1:
 		a.p1ParallelNum++
-		a.p1ParallelMax = LO_P1_PARALLEL_NUM
 	case sealtasks.TTPreCommit2:
 		a.p2ParallelNum++
 	}
@@ -63,7 +62,6 @@ func (a *activeResources) free(wr storiface.WorkerResources, r Resources) {
 		a.apParallelNum--
 	case sealtasks.TTPreCommit1:
 		a.p1ParallelNum--
-		a.p1ParallelMax = LO_P1_PARALLEL_NUM
 	case sealtasks.TTPreCommit2:
 		a.p2ParallelNum--
 	}
@@ -94,32 +92,31 @@ func (a *activeResources) canHandleRequest(needRes Resources, wid WorkerID, call
 		return false
 	}
 
-	if len(res.GPUs) > 0 && needRes.CanGPU { // Meanless
-		// Modified by long 20210406
-		// if a.gpuUsed {
-		if a.gpuUsedNum >= LO_C2_PARALLEL_NUM {
-			log.Debugf("sched: not scheduling on worker %s for %s; GPU in use", wid, caller)
-			return false
-		}
-	}
+	// Deleted by long 20210510
+	// if len(res.GPUs) > 0 && needRes.CanGPU { // Meanless
+	// 	if a.gpuUsed {
+	// 		log.Debugf("sched[C2]: not scheduling on worker %s for %s; GPU in use", wid, caller)
+	// 		return false
+	// 	}
+	// }
 
 	// Added by long 20210405 -------------------------------------------------
 	switch needRes.taskType {
 	case sealtasks.TTAddPiece:
 		if a.apParallelNum > 0 || a.p2ParallelNum > 0 { // AP and P2 are mutually exclusive, and only one AP is allowed to be runnig in parallel.
-			log.Debugf("sched: not scheduling on worker %s for %s; AP is running...", wid, caller)
+			log.Debugf("sched[AP]: not scheduling on worker %s for %s; AP/P2 is running...", wid, caller)
 			return false
 		}
 
 	case sealtasks.TTPreCommit1:
 		if a.p1ParallelNum >= LO_P1_PARALLEL_NUM {
-			log.Debugf("sched: not scheduling on worker %s for %s; P1ParallelNum get max", wid, caller)
+			log.Debugf("sched[P1]: not scheduling on worker %s for %s; P1ParallelNum get max", wid, caller)
 			return false
 		}
 
 	case sealtasks.TTPreCommit2:
 		if a.apParallelNum > 0 {
-			log.Debugf("sched: not scheduling on worker %s for %s; AP is running...", wid, caller)
+			log.Debugf("sched[P2]: not scheduling on worker %s for %s; AP is running...", wid, caller)
 			return false
 		}
 	}
