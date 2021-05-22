@@ -30,9 +30,10 @@ import (
 )
 
 const (
-	ChainFinality          = miner4.ChainFinality
-	SealRandomnessLookback = ChainFinality
-	PaychSettleDelay       = paych4.SettleDelay
+	ChainFinality                  = miner4.ChainFinality
+	SealRandomnessLookback         = ChainFinality
+	PaychSettleDelay               = paych4.SettleDelay
+	MaxPreCommitRandomnessLookback = builtin4.EpochsInDay + SealRandomnessLookback
 )
 
 // SetSupportedProofTypes sets supported proof types, across all actor versions.
@@ -157,6 +158,10 @@ func DealProviderCollateralBounds(
 	}
 }
 
+func DealDurationBounds(pieceSize abi.PaddedPieceSize) (min, max abi.ChainEpoch) {
+	return market2.DealDurationBounds(pieceSize)
+}
+
 // Sets the challenge window and scales the proving period to match (such that
 // there are always 48 challenge windows in a proving period).
 func SetWPoStChallengeWindow(period abi.ChainEpoch) {
@@ -182,6 +187,7 @@ func GetWinningPoStSectorSetLookback(nwVer network.Version) abi.ChainEpoch {
 		return 10
 	}
 
+	// NOTE: if this ever changes, adjust it in a (*Miner).mineOne() logline as well
 	return ChainFinality
 }
 
