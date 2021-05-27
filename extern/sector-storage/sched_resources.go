@@ -103,7 +103,8 @@ func (a *activeResources) canHandleRequest(needRes Resources, wid WorkerID, call
 	// Added by long 20210405 -------------------------------------------------
 	switch needRes.taskType {
 	case sealtasks.TTAddPiece:
-		if a.apParallelNum > 0 || a.p2ParallelNum > 0 || a.p1ParallelNum >= LO_P1_PARALLEL_NUM {
+		// if a.apParallelNum > 0 || a.p2ParallelNum > 0 || a.p1ParallelNum >= LO_P1_PARALLEL_NUM {
+		if a.apParallelNum > 0 || a.p1ParallelNum >= LO_P1_PARALLEL_NUM {
 			// 1. AP and P2 are mutually exclusive, and only one AP is allowed to be runnig in parallel.
 			// 2. When the worker was filled by P1, there is no need to get AP.
 			log.Debugf("sched[AP]: not scheduling on worker %s for %s;", wid, caller)
