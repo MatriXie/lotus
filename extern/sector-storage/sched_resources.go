@@ -117,11 +117,11 @@ func (a *activeResources) canHandleRequest(needRes Resources, wid WorkerID, call
 			return false
 		}
 
-	case sealtasks.TTPreCommit2:
-		if a.apParallelNum > 0 {
-			log.Debugf("sched[P2]: not scheduling on worker %s for %s; AP is running...", wid, caller)
-			return false
-		}
+	// case sealtasks.TTPreCommit2:
+	// 	if a.apParallelNum > 0 {
+	// 		log.Debugf("sched[P2]: not scheduling on worker %s for %s; AP is running...", wid, caller)
+	// 		return false
+	// 	}
 	}
 	// ------------------------------------------------------------------------
 
