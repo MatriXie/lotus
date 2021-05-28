@@ -37,6 +37,7 @@ var ParallelNum uint64 = 92
 var ParallelDenom uint64 = 100
 
 // Added by long 20210404 -------------------------------------------------------------
+var LO_AP_PARALLEL_NUM uint64 = 1
 var LO_P1_PARALLEL_NUM uint64 = 6
 var LO_P2_PARALLEL_NUM uint64 = 1
 var LO_C2_PARALLEL_NUM uint64 = 2
@@ -61,6 +62,11 @@ func init() {
 func (r Resources) Threads(wcpus uint64) uint64 {
 	if r.MaxParallelism == -1 {
 		pNum := ParallelNum
+
+		// AP and P2 are mutually exclusive, and only one AP is allowed to be runnig in parallel.
+		if r.taskType == sealtasks.TTAddPiece {
+			pNum /= LO_AP_PARALLEL_NUM
+		}
 
 		if r.taskType == sealtasks.TTPreCommit2 {
 			pNum /= LO_P2_PARALLEL_NUM
@@ -101,7 +107,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			MaxMemory: 8 << 30,
 			MinMemory: 8 << 30,
 
-			MaxParallelism: 1,
+			MaxParallelism: -1, //1, Modified by long 20210528
 
 			BaseMinMemory: 1 << 30,
 			taskType:      sealtasks.TTAddPiece, // Added by long 20210509
@@ -110,7 +116,7 @@ var ResourceTable = map[sealtasks.TaskType]map[abi.RegisteredSealProof]Resources
 			MaxMemory: 4 << 30,
 			MinMemory: 4 << 30,
 
-			MaxParallelism: 1,
+			MaxParallelism: -1, //1, Modified by long 20210528
 
 			BaseMinMemory: 1 << 30,
 			taskType:      sealtasks.TTAddPiece, // Added by long 20210404
