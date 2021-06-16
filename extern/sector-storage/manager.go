@@ -188,6 +188,12 @@ func (m *Manager) AddLocalStorage(ctx context.Context, path string) error {
 }
 
 func (m *Manager) AddWorker(ctx context.Context, w Worker) error {
+	// Added by long 20210614
+	err := m.localStore.RefreshLocalPaths()
+	if err != nil {
+		return err
+	}
+
 	return m.sched.runWorker(ctx, w)
 }
 

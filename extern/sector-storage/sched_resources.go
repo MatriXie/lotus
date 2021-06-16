@@ -102,13 +102,12 @@ func (a *activeResources) canHandleRequest(needRes Resources, wid WorkerID, call
 
 	// Added by long 20210405 -------------------------------------------------
 	switch needRes.taskType {
-	case sealtasks.TTAddPiece:
-		// if a.p1ParallelNum > 0 || a.p1ParallelNum >= LO_P1_PARALLEL_NUM {
-		if a.p1ParallelNum >= LO_P1_PARALLEL_NUM {
-			// When the worker was filled by P1, there is no need to get AP.
-			log.Debugf("sched[AP]: not scheduling on worker %s for %s; P1ParallelNum get max", wid, caller)
-			return false
-		}
+	// case sealtasks.TTAddPiece:
+	// 	if a.p1ParallelNum >= LO_P1_PARALLEL_NUM {
+	// 		// When the worker was filled by P1, there is no need to get AP.
+	// 		log.Debugf("sched[AP]: not scheduling on worker %s for %s; P1ParallelNum get max", wid, caller)
+	// 		return false
+	// 	}
 
 	case sealtasks.TTPreCommit1:
 		if a.p1ParallelNum >= LO_P1_PARALLEL_NUM {
