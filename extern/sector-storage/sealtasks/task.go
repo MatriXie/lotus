@@ -18,14 +18,12 @@ const (
 
 // Modified by long 20210604
 var order = map[TaskType]int{
-	// Org
 	// TTAddPiece:     6, // least priority
 	// TTPreCommit1:   5,
 	// TTPreCommit2:   4,
-	// Opt1
-	TTPreCommit1:   6,
-	TTPreCommit2:   5,
-	TTAddPiece:     4,
+	TTPreCommit2:   6,
+	TTAddPiece:     5,
+	TTPreCommit1:   4,
 	TTCommit2:      3,
 	TTCommit1:      2,
 	TTUnseal:       1,

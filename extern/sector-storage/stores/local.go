@@ -3,7 +3,6 @@ package stores
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"math/bits"
 	"math/rand"
@@ -79,9 +78,6 @@ type Local struct {
 	paths map[ID]*path
 
 	localLk sync.RWMutex
-
-	// Added by long 20210615
-	mapping_paths map[ID]*path
 }
 
 type path struct {
@@ -91,56 +87,6 @@ type path struct {
 	reserved     int64
 	reservations map[abi.SectorID]storiface.SectorFileType
 }
-
-// Added by long 20210614 -----------------------
-type SectorStore_Cfg struct {
-	ID         string
-	Weight     uint64
-	CanSeal    bool
-	CanStore   bool
-	MaxStorage uint64
-}
-
-func (st *Local) RefreshLocalPaths() error {
-	root := "/lotus/raid/"
-	dir, err := ioutil.ReadDir(root)
-	if err != nil {
-		return err
-	}
-
-	st.localLk.Lock()
-	defer st.localLk.Unlock()
-
-	ps := make(map[ID]*path)
-	for _, d := range dir {
-		if !d.IsDir() {
-			continue
-		}
-		file := root + d.Name() + "/" + MetaFile
-		bytes, err := ioutil.ReadFile(file)
-		if err != nil {
-			fmt.Println("LoDebug: Read json:", err)
-			continue
-		}
-		var cfg SectorStore_Cfg
-		err = json.Unmarshal(bytes, &cfg)
-		if err != nil {
-			fmt.Println("LoDebug: Unmarshal json: ", file, err)
-			continue
-		}
-		ps[(ID)(cfg.ID)] = &path{
-			local:      root + d.Name(),
-			maxStorage: cfg.MaxStorage,
-		}
-	}
-	for k, v := range ps {
-		fmt.Println("LoDebug: ", k, v.local)
-	}
-	st.mapping_paths = ps
-	return nil
-}
-
-// ----------------------------------------------
 
 func (p *path) stat(ls LocalStorage) (fsutil.FsStat, error) {
 	stat, err := ls.Stat(p.local)
@@ -496,9 +442,7 @@ func (st *Local) AcquireSector(ctx context.Context, sid storage.SectorRef, exist
 		}
 
 		for _, info := range si {
-			// Modified by long 20210615
-			// p, ok := st.paths[info.ID]
-			p, ok := st.mapping_paths[info.ID]
+			p, ok := st.paths[info.ID]
 			if !ok {
 				continue
 			}
